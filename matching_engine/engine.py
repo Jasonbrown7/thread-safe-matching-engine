@@ -31,7 +31,7 @@ class Order:
 
 class MatchingEngine:
     def __init__(self):
-        # We store negative prices to simulate a max-heap with Python's min-heap implementation.
+        # Store negative prices to simulate a max-heap with Python's min-heap implementation
         self.bids = []
         self.asks = []
         self.orders = {}
