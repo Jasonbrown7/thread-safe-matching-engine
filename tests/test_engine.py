@@ -61,3 +61,19 @@ class TestMatchingEngine(unittest.TestCase):
     def test_cancel_non_existent_order(self):
         cancelled = self.engine.cancel_order(999)
         self.assertFalse(cancelled)
+
+    def test_market_buy_order_full_fill(self):
+        # Add a resting SELL order
+        self.engine.add_order(order_type=OrderType.LIMIT, side=OrderSide.SELL, price=10100, quantity=10)
+
+        # Add a BUY market order that should be fully filled
+        order_id, trades = self.engine.add_order(order_type=OrderType.MARKET, side=OrderSide.BUY, price=0, quantity=10)
+
+        # Assert trade details
+        self.assertEqual(len(trades), 1)
+        self.assertEqual(trades[0].quantity, 10)
+        self.assertEqual(trades[0].price, 10100)
+
+        # Assert book state
+        self.assertEqual(len(self.engine.asks), 0)
+        self.assertNotIn(order_id, self.engine.orders)

@@ -56,7 +56,7 @@ class MatchingEngine:
             self.orders[order_id] = taking_order
 
             if side == OrderSide.BUY:
-                while self.asks and taking_order.quantity > 0 and taking_order.price >= self.asks[0][0]:
+                while self.asks and taking_order.quantity > 0 and (taking_order.order_type == OrderType.MARKET or taking_order.price >= self.asks[0][0]):
                     maker_price, maker_ts, maker_id, maker_qty = heapq.heappop(self.asks)
                     if maker_id not in self.orders:
                         continue
@@ -78,14 +78,14 @@ class MatchingEngine:
                         self.orders[maker_id] = new_making_order
                         heapq.heappush(self.asks, (new_making_order.price, new_making_order.timestamp, new_making_order.order_id, new_making_order.quantity))
                 
-                if taking_order.quantity > 0:
+                if taking_order.quantity > 0 and taking_order.order_type == OrderType.LIMIT:
                     self.orders[order_id] = taking_order
                     heapq.heappush(self.bids, (-taking_order.price, taking_order.timestamp, taking_order.order_id, taking_order.quantity))
                 else:
                     del self.orders[order_id]
 
             else:  # side == OrderSide.SELL
-                while self.bids and taking_order.quantity > 0 and taking_order.price <= -self.bids[0][0]:
+                while self.bids and taking_order.quantity > 0 and (taking_order.order_type == OrderType.MARKET or taking_order.price <= -self.bids[0][0]):
                     _, maker_ts, maker_id, maker_qty = heapq.heappop(self.bids)
                     if maker_id not in self.orders:
                         continue
@@ -105,7 +105,7 @@ class MatchingEngine:
                         self.orders[maker_id] = new_making_order
                         heapq.heappush(self.bids, (-new_making_order.price, new_making_order.timestamp, new_making_order.order_id, new_making_order.quantity))
 
-                if taking_order.quantity > 0:
+                if taking_order.quantity > 0 and taking_order.order_type == OrderType.LIMIT:
                     self.orders[order_id] = taking_order
                     heapq.heappush(self.asks, (taking_order.price, taking_order.timestamp, taking_order.order_id, taking_order.quantity))
                 else:
