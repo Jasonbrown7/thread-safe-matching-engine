@@ -38,7 +38,29 @@ class MatchingEngine:
         self.lock = threading.RLock()
 
     def add_order(self, order_type, side, price, quantity):
-        pass
+        with self.lock:
+            order_id = next(order_id_generator)
+            timestamp = time.time_ns()
+
+            order = Order(
+                order_id=order_id,
+                side=side,
+                order_type=order_type,
+                quantity=quantity,
+                price=price,
+                timestamp=timestamp,
+            )
+
+            self.orders[order.order_id] = order
+
+            if side == OrderSide.BUY:
+                heapq.heappush(
+                    self.bids, (-order.price, order.timestamp, order.order_id, order.quantity)
+                )
+            else:  # side == OrderSide.SELL
+                heapq.heappush(
+                    self.asks, (order.price, order.timestamp, order.order_id, order.quantity)
+                )
 
     def cancel_order(self, order_id):
         pass
