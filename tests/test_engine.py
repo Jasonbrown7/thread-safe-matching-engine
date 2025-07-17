@@ -14,7 +14,7 @@ class TestMatchingEngine(unittest.TestCase):
         self.assertIsNotNone(self.engine.lock)
 
     def test_add_limit_buy_order(self):
-        trades = self.engine.add_order(order_type=OrderType.LIMIT, side=OrderSide.BUY, price=100, quantity=10)
+        _, trades = self.engine.add_order(order_type=OrderType.LIMIT, side=OrderSide.BUY, price=100, quantity=10)
         self.assertEqual(trades, [])
 
         self.assertEqual(self.engine.asks, [])
@@ -33,7 +33,7 @@ class TestMatchingEngine(unittest.TestCase):
         self.engine.add_order(order_type=OrderType.LIMIT, side=OrderSide.SELL, price=10100, quantity=10)
 
         # Add an aggressive BUY order that should match
-        trades = self.engine.add_order(order_type=OrderType.LIMIT, side=OrderSide.BUY, price=10100, quantity=5)
+        _, trades = self.engine.add_order(order_type=OrderType.LIMIT, side=OrderSide.BUY, price=10100, quantity=5)
 
         # Assert that one trade occurred
         self.assertEqual(len(trades), 1)
@@ -50,3 +50,14 @@ class TestMatchingEngine(unittest.TestCase):
         # Verify the remaining quantity of the resting order
         _, _, _, remaining_quantity = heapq.heappop(self.engine.asks)
         self.assertEqual(remaining_quantity, 5)
+
+    def test_cancel_order(self):
+        order_id, _ = self.engine.add_order(order_type=OrderType.LIMIT, side=OrderSide.BUY, price=100, quantity=10)
+        
+        cancelled = self.engine.cancel_order(order_id)
+        self.assertTrue(cancelled)
+        self.assertNotIn(order_id, self.engine.orders)
+
+    def test_cancel_non_existent_order(self):
+        cancelled = self.engine.cancel_order(999)
+        self.assertFalse(cancelled)

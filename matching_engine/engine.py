@@ -47,7 +47,7 @@ class MatchingEngine:
         self.orders = {}
         self.lock = threading.RLock()
 
-    def add_order(self, order_type, side, price, quantity) -> list["Trade"]:
+    def add_order(self, order_type, side, price, quantity) -> tuple[int, list["Trade"]]:
         trades = []
         with self.lock:
             order_id = next(order_id_generator)
@@ -58,6 +58,8 @@ class MatchingEngine:
             if side == OrderSide.BUY:
                 while self.asks and taking_order.quantity > 0 and taking_order.price >= self.asks[0][0]:
                     maker_price, maker_ts, maker_id, maker_qty = heapq.heappop(self.asks)
+                    if maker_id not in self.orders:
+                        continue
                     making_order = self.orders.pop(maker_id)
 
                     trade_quantity = min(taking_order.quantity, making_order.quantity)
@@ -85,6 +87,8 @@ class MatchingEngine:
             else:  # side == OrderSide.SELL
                 while self.bids and taking_order.quantity > 0 and taking_order.price <= -self.bids[0][0]:
                     _, maker_ts, maker_id, maker_qty = heapq.heappop(self.bids)
+                    if maker_id not in self.orders:
+                        continue
                     making_order = self.orders.pop(maker_id)
 
                     trade_quantity = min(taking_order.quantity, making_order.quantity)
@@ -107,7 +111,11 @@ class MatchingEngine:
                 else:
                     del self.orders[order_id]
 
-        return trades
+            return (order_id, trades)
 
     def cancel_order(self, order_id):
-        pass
+        with self.lock:
+            if order_id in self.orders:
+                del self.orders[order_id]
+                return True
+            return False
